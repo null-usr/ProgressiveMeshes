@@ -13,7 +13,7 @@ bool loadOBJ(const std::string &path,
 	std::ifstream file(path);
 	if (!file)
 	{
-		std::cout << "Failed to open OBJ file\n";
+		std::cerr << "Failed to open OBJ file: " << path << "\n";
 		return false;
 	}
 
@@ -21,91 +21,114 @@ bool loadOBJ(const std::string &path,
 	std::vector<glm::vec3> normals;
 
 	std::string line;
-	double x, y, z;
-	double U, V;
-
 	while (std::getline(file, line))
 	{
-		// vertex position
 		if (line.rfind("v ", 0) == 0)
 		{
-			std::istringstream v(line.substr(2));
-			v >> x >> y >> z;
-
+			glm::vec3 pos;
+			std::istringstream(line.substr(2)) >> pos.x >> pos.y >> pos.z;
 			Vertex vert;
-			vert.Position = glm::vec3(x, y, z);
+			vert.Position = pos;
 			vertices.push_back(vert);
 		}
-		// texture coords
 		else if (line.rfind("vt ", 0) == 0)
 		{
-			std::istringstream v(line.substr(3));
-			v >> U >> V;
-			UVs.emplace_back(U, V);
+			glm::vec2 uv;
+			std::istringstream(line.substr(3)) >> uv.x >> uv.y;
+			UVs.push_back(uv);
 		}
-		// normals
 		else if (line.rfind("vn ", 0) == 0)
 		{
-			std::istringstream v(line.substr(3));
-			v >> x >> y >> z;
-			normals.emplace_back(x, y, z);
+			glm::vec3 norm;
+			std::istringstream(line.substr(3)) >> norm.x >> norm.y >> norm.z;
+			normals.push_back(norm);
 		}
-		// faces
 		else if (line.rfind("f ", 0) == 0)
 		{
-			int a, b, c;
-			int t1, t2, t3;
-			int n1, n2, n3;
+			std::istringstream s(line.substr(2));
+			std::string token;
+			std::vector<int> vIdx, tIdx, nIdx;
 
-			sscanf(line.c_str(),
-				   "f %d/%d/%d %d/%d/%d %d/%d/%d",
-				   &a, &t1, &n1,
-				   &b, &t2, &n2,
-				   &c, &t3, &n3);
+			while (s >> token)
+			{
+				int vi = -1, ti = -1, ni = -1;
 
-			// OBJ is 1-based
-			a--; b--; c--;
-			t1--; t2--; t3--;
-			n1--; n2--; n3--;
+				size_t firstSlash = token.find('/');
+				size_t lastSlash = token.rfind('/');
 
-			TriangleID tid = triangles.size();
-			triangles.emplace_back(a, b, c);
+				if (firstSlash == std::string::npos)
+				{
+					// f v1 v2 v3
+					vi = std::stoi(token) - 1;
+				}
+				else if (firstSlash == lastSlash)
+				{
+					// f v1/vt1
+					vi = std::stoi(token.substr(0, firstSlash)) - 1;
+					ti = std::stoi(token.substr(firstSlash + 1)) - 1;
+				}
+				else
+				{
+					// f v1/vt1/vn1 or f v1//vn1
+					vi = std::stoi(token.substr(0, firstSlash)) - 1;
+					if (firstSlash + 1 != lastSlash)
+						ti = std::stoi(token.substr(firstSlash + 1, lastSlash - firstSlash - 1)) - 1;
+					ni = std::stoi(token.substr(lastSlash + 1)) - 1;
+				}
 
-			// per-vertex attributes
-			vertices[a].Normal = normals[n1];
-			vertices[b].Normal = normals[n2];
-			vertices[c].Normal = normals[n3];
+				vIdx.push_back(vi);
+				tIdx.push_back(ti);
+				nIdx.push_back(ni);
+			}
 
-			vertices[a].TexCoords = UVs[t1];
-			vertices[b].TexCoords = UVs[t2];
-			vertices[c].TexCoords = UVs[t3];
+			if (vIdx.size() < 3)
+				continue; // skip degenerate faces
 
-			// triangle membership
-			vertices[a].triangles.push_back(tid);
-			vertices[b].triangles.push_back(tid);
-			vertices[c].triangles.push_back(tid);
+			// triangulate polygons (assumes convex)
+			for (size_t i = 1; i + 1 < vIdx.size(); ++i)
+			{
+				int a = vIdx[0], b = vIdx[i], c = vIdx[i + 1];
+				TriangleID tid = triangles.size();
+				triangles.emplace_back(a, b, c);
 
-			// adjacency
-			vertices[a].neighbors.push_back(b);
-			vertices[a].neighbors.push_back(c);
+				// assign normals/UVs if present
+				if (nIdx[0] >= 0 && nIdx[0] < normals.size())
+					vertices[a].Normal = normals[nIdx[0]];
+				if (nIdx[i] >= 0 && nIdx[i] < normals.size())
+					vertices[b].Normal = normals[nIdx[i]];
+				if (nIdx[i + 1] >= 0 && nIdx[i + 1] < normals.size())
+					vertices[c].Normal = normals[nIdx[i + 1]];
 
-			vertices[b].neighbors.push_back(a);
-			vertices[b].neighbors.push_back(c);
+				if (tIdx[0] >= 0 && tIdx[0] < UVs.size())
+					vertices[a].TexCoords = UVs[tIdx[0]];
+				if (tIdx[i] >= 0 && tIdx[i] < UVs.size())
+					vertices[b].TexCoords = UVs[tIdx[i]];
+				if (tIdx[i + 1] >= 0 && tIdx[i + 1] < UVs.size())
+					vertices[c].TexCoords = UVs[tIdx[i + 1]];
 
-			vertices[c].neighbors.push_back(a);
-			vertices[c].neighbors.push_back(b);
+				// triangle membership
+				vertices[a].triangles.push_back(tid);
+				vertices[b].triangles.push_back(tid);
+				vertices[c].triangles.push_back(tid);
 
-			// index buffer
-			indices.push_back(a);
-			indices.push_back(b);
-			indices.push_back(c);
+				// adjacency
+				vertices[a].neighbors.push_back(b);
+				vertices[a].neighbors.push_back(c);
+				vertices[b].neighbors.push_back(a);
+				vertices[b].neighbors.push_back(c);
+				vertices[c].neighbors.push_back(a);
+				vertices[c].neighbors.push_back(b);
+
+				indices.push_back(a);
+				indices.push_back(b);
+				indices.push_back(c);
+			}
 		}
 	}
 
-	std::cout << "OBJ load complete\n";
+	std::cout << "OBJ load complete: " << vertices.size() << " vertices, " << triangles.size() << " triangles\n";
 	return true;
 }
-
 
 // save the OBJ
 // bool saveOBJ(Mesh *mesh, char *path)

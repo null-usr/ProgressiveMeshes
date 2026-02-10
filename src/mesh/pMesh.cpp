@@ -3,9 +3,10 @@
 #include "mesh/pMesh.h"
 
 pMesh::pMesh(const Mesh &source, float distance)
-	: original(source), maxD(distance)
+	: original(source)
 {
 	progressive = std::make_unique<Mesh>(original);
+	maxVerts = original.NumVerts();
 	Initialize();
 }
 
@@ -59,4 +60,9 @@ void pMesh::Reset()
 {
 	progressive = std::make_unique<Mesh>(original);
 	currentHistoryIndex = 0;
+
+	for (auto &tri : progressive->getTriangles())
+        tri.verts = tri.originalVerts;
+
+    progressive->updateVBO();
 }

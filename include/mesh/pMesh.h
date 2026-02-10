@@ -32,13 +32,15 @@ public:
 
 	void Draw(GLuint programID, const glm::mat4 &MVP);
 
+	int MaxVerts() const { return maxVerts; }
+	int CurrentVerts() const { return progressive->NumVerts(); }
+
 private:
 	Mesh original;
 	std::unique_ptr<Mesh> progressive;
 
-	float maxD;
-	int currentHistoryIndex = 0;
-
 	std::vector<pVert> history;
+	int currentHistoryIndex = 0;
+	int maxVerts = 0;
 };
 #endif

@@ -27,6 +27,20 @@ set(GLAD_SRC
 )
 
 # ---------------------------
+# ImGui
+# ---------------------------
+file(GLOB IMGUI_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui/backends/imgui_impl_glfw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui/backends/imgui_impl_opengl3.cpp
+)
+
+set(IMGUI_INCLUDE
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/imgui/backends
+)
+
+# ---------------------------
 # Find packages
 # ---------------------------
 find_package(glfw3 REQUIRED)
@@ -35,7 +49,7 @@ find_package(OpenGL REQUIRED)
 # ---------------------------
 # Executable
 # ---------------------------
-add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC})
+add_executable(${PROJECT_NAME} ${SRC_FILES} ${GLAD_SRC} ${IMGUI_SRC})
 
 # ---------------------------
 # Include directories
@@ -44,6 +58,7 @@ target_include_directories(${PROJECT_NAME}
 	PRIVATE
 	include
 	${CMAKE_CURRENT_SOURCE_DIR}/lib/glad/include
+	${IMGUI_INCLUDE}
 )
 
 # ---------------------------

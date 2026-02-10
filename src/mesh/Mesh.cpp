@@ -29,6 +29,29 @@ Mesh::Mesh(const std::string &path)
 	setupMesh();
 }
 
+Mesh &Mesh::operator=(const Mesh &m)
+{
+	if (this == &m)
+		return *this;
+
+	this->vertices = m.vertices;
+	this->triangles = m.triangles;
+
+	for (auto &tri : this->triangles)
+	{
+		for (int i = 0; i < tri.verts.size(); i++)
+		{
+			VertexID id = tri.verts[i]; 
+			tri.verts[i] = id;	
+		}
+	}
+	this->indices = m.indices;
+
+	this->setupMesh();
+
+	return *this;
+}
+
 Mesh::~Mesh()
 {
 	destroyGL();

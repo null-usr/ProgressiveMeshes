@@ -19,6 +19,9 @@ lib/
 # Folder config file
 Desktop.ini
 
+#imgui config file
+imgui.ini
+
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
