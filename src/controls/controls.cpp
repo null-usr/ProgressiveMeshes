@@ -92,9 +92,13 @@ void updateOrbitControls(GLFWwindow *window)
 		target,
 		glm::vec3(0, 1, 0));
 
+	int width, height;
+	glfwGetFramebufferSize(window, &width, &height);
+	float aspect = width / float(height);
+
 	ProjectionMatrix = glm::perspective(
 		glm::radians(45.0f),
-		4.0f / 3.0f,
+		aspect,
 		0.1f,
 		100.0f);
 }
