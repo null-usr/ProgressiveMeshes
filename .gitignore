@@ -2,6 +2,20 @@
 Thumbs.db
 ehthumbs.db
 
+.vscode/
+
+# build
+build/
+bin/
+lib/
+*.o
+*.a
+*.lib
+*.dll
+*.exe
+*.so
+*.dylib
+
 # Folder config file
 Desktop.ini
 
@@ -45,3 +59,21 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+#CMAKE ignores
+CMakeLists.txt.user
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+# Ninja build files
+build.ninja
+*.ninja_deps
+*.ninja_log
