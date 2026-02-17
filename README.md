@@ -1,5 +1,4 @@
---- README.md ---
-# Game Architecture Final Project: Progressive Meshes with OpenGL
+# Progressive Meshes with OpenGL
 
 This project implements **Progressive Meshes** using OpenGL, based on [Hoppe's PM project](http://hhoppe.com/proj/pm/).
 It also integrates **Dear ImGui** for runtime vertex control and mesh interaction.
