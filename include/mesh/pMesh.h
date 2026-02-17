@@ -30,10 +30,18 @@ public:
 	void Update(int targetVerts);
 	void Reset();
 
+	int MinVerts() const
+	{
+		return maxVerts - history.size();
+	}
+
 	void Draw(GLuint programID, const glm::mat4 &MVP);
 
 	int MaxVerts() const { return maxVerts; }
 	int CurrentVerts() const { return progressive->NumVerts(); }
+	int HistorySize() const { return static_cast<int>(history.size()); }
+
+	void UpdateToStep(int stepIndex);
 
 private:
 	Mesh original;

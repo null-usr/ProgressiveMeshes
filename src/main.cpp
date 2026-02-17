@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		static int targetVerts = progressive.CurrentVerts();
+		int targetVerts = progressive.CurrentVerts();
 
 		ImGui::Begin("Progressive Mesh Control");
 
@@ -193,7 +193,6 @@ int main(int argc, char *argv[])
 					progressive = pMesh(mesh);
 					max = mesh.NumVerts();
 					current = max;
-					targetVerts = current;
 				}
 
 				if (isSelected)
@@ -202,10 +201,14 @@ int main(int argc, char *argv[])
 			ImGui::EndCombo();
 		}
 
-		// Slider to adjust vertex count
-		if (ImGui::SliderInt("Vertex Count", &targetVerts, 0, max))
+		static int collapseStep = progressive.HistorySize();
+		int historySize = progressive.HistorySize();
+
+		static int sliderValue = 0;				   
+		int stepIndex = historySize - sliderValue;
+		if (ImGui::SliderInt("LOD", &sliderValue, 0, historySize))
 		{
-			progressive.Update(targetVerts);
+			progressive.UpdateToStep(stepIndex);
 		}
 
 		// Display current vertex count

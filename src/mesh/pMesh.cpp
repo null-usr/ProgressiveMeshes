@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "mesh/pMesh.h"
+#include <algorithm>
 
 pMesh::pMesh(const Mesh &source, float distance)
 	: original(source)
@@ -62,7 +63,26 @@ void pMesh::Reset()
 	currentHistoryIndex = 0;
 
 	for (auto &tri : progressive->getTriangles())
-        tri.verts = tri.originalVerts;
+		tri.verts = tri.originalVerts;
 
-    progressive->updateVBO();
+	progressive->updateVBO();
+}
+
+void pMesh::UpdateToStep(int stepIndex)
+{
+	// clamp index
+	stepIndex = std::clamp(stepIndex, 0, static_cast<int>(history.size()));
+
+	currentHistoryIndex = 0;
+	progressive = std::make_unique<Mesh>(original);
+
+	// apply collapses up to stepIndex
+	for (int i = 0; i < stepIndex; ++i)
+	{
+		auto &h = history[i];
+		progressive->edgeCollapse(h.from, h.to);
+		currentHistoryIndex++;
+	}
+
+	progressive->updateVBO();
 }
