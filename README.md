@@ -1,5 +1,7 @@
 # Progressive Meshes with OpenGL
 
+<video src="media/demo.mp4" controls autoplay loop muted width="700"></video>
+
 This project implements **Progressive Meshes** using OpenGL, based on [Hoppe's PM project](http://hhoppe.com/proj/pm/).
 It also integrates **Dear ImGui** for runtime vertex control and mesh interaction.
 
@@ -18,10 +20,10 @@ pacman -S mingw-w64-ucrt-x86_64-glm
   Generate the OpenGL loader, then place:
   - Headers → `./lib/glad/include`
   - Source → `./src`  
-  Make sure to include these in your project build.
+    Make sure to include these in your project build.
 
 - **Dear ImGui**: Include the library in your project folder (./lib/imgui) along with the OpenGL3 + GLFW backends (./lib/imgui/backends).
-Ensure your include paths and build system reference these headers and source files.
+  Ensure your include paths and build system reference these headers and source files.
 
 ---
 
@@ -43,6 +45,7 @@ g++ *.cpp ./lib/glad/src/glad.c ./lib/imgui/*.cpp ./lib/imgui/backends/imgui_imp
 
 Or use **CMake** (recommended) with the provided `CMakeLists.txt`.
 --- README.md ---
+
 # Game Architecture Final Project: Progressive Meshes with OpenGL
 
 This project implements **Progressive Meshes** using OpenGL, based on [Hoppe's PM project](http://hhoppe.com/proj/pm/).
@@ -62,13 +65,13 @@ pacman -S mingw-w64-ucrt-x86_64-glm
   Generate the OpenGL loader, then place:
   - Headers → `./lib/glad/include`
   - Source → `./src`  
-  Make sure to include these in your project build.
+    Make sure to include these in your project build.
 
 ---
 
 ## Supported Meshes
 
-- Only **Bunny 1k** and **Suzanne** are safe for use with this implementation.  
+- Only **Bunny 1k** and **Suzanne** are safe for use with this implementation.
 - Other meshes may not be compatible.
 
 ---

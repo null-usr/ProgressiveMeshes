@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 								   "./data/shaders/ga_constant_color_frag.glsl");
 
 	// Dark blue background
-	glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	std::vector<std::string> modelFiles;
 	for (const auto &entry : fs::directory_iterator("./data/models"))
