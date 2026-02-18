@@ -7,6 +7,7 @@
 #include <fstream>
 #include <vector>
 #include <array>
+#include <queue>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +18,7 @@
 
 class Vertex;
 class Triangle;
+class Mesh;
 // class Edge;
 
 //===========================================================================VERTEX
@@ -29,12 +31,27 @@ struct Vertex
 	glm::vec3 Normal{};
 	glm::vec2 TexCoords{};
 
-	std::vector<TriangleID> triangles; // indices, not pointers
+	glm::mat4 Q; // quadric error matrix
+
+	std::vector<TriangleID> triangles;
 	std::vector<VertexID> neighbors;
 
 	VertexID destiny = -1;
 	bool alive = true;
 };
+
+struct VertexCost
+{
+	VertexID u; // vertex to collapse
+	VertexID v; // target vertex
+	float cost;
+
+	bool operator<(const VertexCost &other) const
+	{
+		return cost > other.cost;
+	}
+};
+
 //===========================================================================EDGE
 
 // Maybe removing the edge class entirely will make things easier.
@@ -93,6 +110,8 @@ struct Triangle
 			if (v == from)
 				v = to;
 	}
+
+	glm::vec3 getNormal(const Mesh &m) const;
 };
 
 //===========================================================================MESH
@@ -115,8 +134,10 @@ public:
 	VertexID cheapestVertex();
 	int NumVerts() const;
 
-	const std::vector<Vertex> &getVertices() const { return vertices; }
+	const std::vector<Vertex>& getVertices() const { return vertices; }
 	std::vector<Vertex> &getVertices() { return vertices; }
+
+	bool isBoundaryEdge(VertexID u, VertexID v) const;
 
 	const std::vector<Triangle> &getTriangles() const { return triangles; }
 	std::vector<Triangle> &getTriangles() { return triangles; }
@@ -124,12 +145,19 @@ public:
 private:
 	void setupMesh();
 	void destroyGL();
+	void initCollapseQueue();
+	void updateVertexCost(VertexID u);
+	void computeInitialQuadrics();
+
+	std::priority_queue<VertexCost> collapseQueue;
+	std::vector<float> cachedCosts;
 
 	std::vector<Vertex> vertices;
 	std::vector<Triangle> triangles;
 	std::vector<GLuint> indices;
 
 	GLuint VAO{0}, VBO{0}, EBO{0};
+	int aliveCount = 0;
 };
 
 //===================================================Helper Functions================
@@ -138,44 +166,63 @@ private:
 cost n
 	u,v u v f normal n normal f Tu Tuv ( ) =−× − • { } { }
 */
-inline float Cost(VertexID u, VertexID v, const Mesh &mesh)
+// inline float Cost(VertexID u, VertexID v, const Mesh &mesh)
+// {
+// 	const auto &verts = mesh.getVertices();
+// 	const auto &tris = mesh.getTriangles();
+
+// 	const glm::vec3 &A = verts[u].Position;
+// 	const glm::vec3 &B = verts[v].Position;
+
+// 	float length = glm::distance(A, B);
+
+// 	float curve = 0.0f;
+
+// 	// collect triangles sharing edge (u, v)
+// 	std::vector<TriangleID> shared;
+
+// 	for (TriangleID tid : verts[u].triangles)
+// 	{
+// 		const Triangle &t = tris[tid];
+// 		if (t.contains(v))
+// 			shared.push_back(tid);
+// 	}
+
+// 	// curvature term
+// 	for (TriangleID tid : verts[u].triangles)
+// 	{
+// 		const Triangle &t = tris[tid];
+// 		float minCurv = 1.0f;
+
+// 		for (TriangleID sid : shared)
+// 		{
+// 			float dot = glm::dot(t.normal, tris[sid].normal);
+// 			minCurv = std::min(minCurv, (1.0f - dot) * 0.5f);
+// 		}
+
+// 		curve = std::max(curve, minCurv);
+// 	}
+
+// 	return length * curve;
+// }
+
+inline float Cost(VertexID u, VertexID v, const Mesh &m)
 {
-	const auto &verts = mesh.getVertices();
-	const auto &tris = mesh.getTriangles();
+	const auto &vertices = m.getVertices();
+	// Combine the quadrics
+	glm::mat4 Q_combined = vertices[u].Q + vertices[v].Q;
+	// v_target is the position u would move to (the position of v)
+	glm::vec4 v_tp(vertices[v].Position, 1.0f);
 
-	const glm::vec3 &A = verts[u].Position;
-	const glm::vec3 &B = verts[v].Position;
+	// Cost = v^T * Q * v
+	float cost = glm::dot(v_tp, Q_combined * v_tp);
 
-	float length = glm::distance(A, B);
-
-	float curve = 0.0f;
-
-	// collect triangles sharing edge (u, v)
-	std::vector<TriangleID> shared;
-
-	for (TriangleID tid : verts[u].triangles)
+	if (m.isBoundaryEdge(u, v))
 	{
-		const Triangle &t = tris[tid];
-		if (t.contains(v))
-			shared.push_back(tid);
+		cost += 100.0f; //edge penalty
 	}
 
-	// curvature term
-	for (TriangleID tid : verts[u].triangles)
-	{
-		const Triangle &t = tris[tid];
-		float minCurv = 1.0f;
-
-		for (TriangleID sid : shared)
-		{
-			float dot = glm::dot(t.normal, tris[sid].normal);
-			minCurv = std::min(minCurv, (1.0f - dot) * 0.5f);
-		}
-
-		curve = std::max(curve, minCurv);
-	}
-
-	return length * curve;
+	return cost;
 }
 
 #endif

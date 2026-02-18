@@ -6,8 +6,11 @@
 pMesh::pMesh(const Mesh &source, float distance)
 	: original(source)
 {
-	progressive = std::make_unique<Mesh>(original);
+	for (auto &v : original.getVertices())
+		v.alive = true;
+
 	maxVerts = original.NumVerts();
+	progressive = std::make_unique<Mesh>(original);
 	Initialize();
 }
 
@@ -21,8 +24,9 @@ void pMesh::Initialize()
 	while (progressive->NumVerts() > 3)
 	{
 		VertexID u = progressive->cheapestVertex();
-		if (u < 0)
+		if (u < 0) {
 			break;
+		}
 
 		VertexID v = progressive->getVertices()[u].destiny;
 		history.push_back({u, v});

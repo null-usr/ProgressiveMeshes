@@ -133,6 +133,7 @@ int main(int argc, char *argv[])
 	pMesh progressive = pMesh(mesh);
 	int max = /*mesh->NumVerts()*/ mesh.NumVerts();
 	int current = max;
+	int targetVerts = max;
 
 	glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
@@ -176,8 +177,6 @@ int main(int argc, char *argv[])
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
-		int targetVerts = progressive.CurrentVerts();
-
 		ImGui::Begin("Progressive Mesh Control");
 
 		if (ImGui::BeginCombo("Model", fs::path(modelFiles[currentModelIndex]).filename().string().c_str()))
@@ -191,8 +190,7 @@ int main(int argc, char *argv[])
 
 					mesh = Mesh(modelFiles[n]);
 					progressive = pMesh(mesh);
-					max = mesh.NumVerts();
-					current = max;
+					targetVerts = progressive.MaxVerts();
 				}
 
 				if (isSelected)
@@ -201,18 +199,25 @@ int main(int argc, char *argv[])
 			ImGui::EndCombo();
 		}
 
-		static int collapseStep = progressive.HistorySize();
-		int historySize = progressive.HistorySize();
+		int minVerts = progressive.MinVerts();
+		int maxVerts = progressive.MaxVerts();
 
-		static int sliderValue = 0;				   
-		int stepIndex = historySize - sliderValue;
-		if (ImGui::SliderInt("LOD", &sliderValue, 0, historySize))
+		if (ImGui::SliderInt("LOD", &targetVerts, minVerts, maxVerts))
 		{
-			progressive.UpdateToStep(stepIndex);
+			// Find nearest history step that reaches <= targetVerts
+			int step = 0;
+			while (step < progressive.HistorySize() &&
+				   (progressive.MaxVerts() - step) > targetVerts)
+			{
+
+				++step;
+			}
+
+			progressive.UpdateToStep(step);
 		}
 
 		// Display current vertex count
-		ImGui::Text("Current vertices: %d / %d", targetVerts, max);
+		ImGui::Text("Current vertices: %d / %d / %d", minVerts, targetVerts, maxVerts);
 
 		ImGui::End();
 
